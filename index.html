@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Bar Graph</title>
+    <style media="screen">
+      h1 {
+        text-align: center;
+      }
+      svg {
+        background: #f1f1f1;
+        border: solid 2px black;
+        display: block;
+        margin: auto;
+        padding-bottom: 20px;
+      }
+      .bar {
+        border: 1px solid white;
+      }
+      .bar:hover {
+        fill: aqua
+      }
+
+      #tooltip {
+        position: relative;
+        background: lightgrey;
+        padding: 5px;
+        width: 120px;
+        text-align: center
+      }
+
+      #y-label {
+        color: red;
+      }
+
+
+    </style>
+  </head>
+  <body>
+    <script src="https://d3js.org/d3.v5.js"></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js">
+    </script>
+
+    <h1 id="title">Federal Reserve Economic Data</h1>
+    <script type="text/javascript">
+
+      fetch("https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json")
+        .then(response => response.json())
+        .then(data => {
+          console.log( JSON.stringify(data))
+          // document.getElementById("title").textContent = JSON.stringify(data["source_name"])
+
+          const dataset = data["data"]
+
+
+
+          const w = 1000;
+          const h = 500;
+          const yPadding = 50;
+          const xPadding = 20
+
+          const years = dataset.map((item) => {
+            let year = new Date(item[0])
+            return year
+          })
+
+          console.log(years)
+
+          //scaled to min and max
+
+          const xScale = d3.scaleTime()
+                .domain([years[0], years[years.length - 1]])
+                .range([yPadding, w - yPadding])
+
+
+          const yScale = d3.scaleLinear()
+                .domain([0, d3.max(dataset, d => d[1])])
+                .range([h - xPadding ,  xPadding])
+
+          const xAxis = d3.axisBottom(xScale)
+          const yAxis = d3.axisLeft(yScale)
+
+
+          let tooltip = d3.select("body").append("div")
+                .attr("id", "tooltip")
+                .style("opacity", 0)
+
+
+          const svg = d3
+            .select("body")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h);
+
+          svg.append("text")
+            .attr("transform", "translate(-110, 450) rotate(-90)")
+            .attr("x", yPadding + 10)
+            .attr("y", 200)
+            .attr("font-size", "1.5em")
+            .attr("id", "y-label")
+            .text("Gross Domestic Product (billions)")
+          //Data bars
+
+          svg.selectAll("rect")
+            .data(data["data"])
+            .enter()
+            .append("rect")
+            .attr("data-date", (d, i) => {
+              return dataset[i][0]
+            })
+            .attr("data-gdp", (d, i) => {
+              return dataset[i][1]
+            })
+            .attr("width", 3)
+            .attr("height", (d) => yScale(0) - yScale(d[1]) )
+            .attr("x", (d, i) => xScale(years[i]))
+            .attr("y", (d) => yScale(d[1]))
+            .attr("fill", "steelblue")
+            .attr("class", "bar")
+
+            //Tooltip popup
+
+            .on("mouseover", (d) => {
+              tooltip.transition()
+                .duration(200)
+                .style("opacity", 0.9);
+              tooltip.html(`${d[0]} <br> $${d[1]} Billion`)
+                .style("left", (d3.event.pageX + 10) + "px")
+                .style("top", (d3.event.pageY - 100) + "px")
+              tooltip.attr("data-date", () => d[0])
+            })
+
+            .on("mouseout", () => {
+              tooltip.transition()
+              .duration(300)
+              .style("opacity", 0)
+            })
+
+
+            //Axes
+
+
+          svg.append("g")
+            .attr("transform", "translate(0, " + (h - xPadding) + ")")
+            .call(xAxis)
+            .attr("id", "x-axis")
+
+          svg.append("g")
+            .attr("transform", `translate(${yPadding}, 0)`)
+            .call(yAxis)
+            .attr("id", "y-axis")
+          })
+
+          //labels
+
+          // svg.append("text")
+          //   // .style("transform", "rotate(90)")
+          //   .attr("x", 200)
+          //   .attr("y", 200)
+          //   .text("test")
+
+
+        // document.getElementById("data").textContent = dataEl
+    </script>
+  </body>
+</html>
